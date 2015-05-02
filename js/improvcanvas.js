@@ -11,7 +11,7 @@ var myVideo, myVideoCanvas, myVideoCanvasWidth, myVideoCanvasHeight, myVideoCanv
 var theirVideo, theirVideoCanvas, theirVideoCanvasContext,theirVideoTexture;
 
 // GLOBAL THREE.JS VARIABLES
-var container, scene, camera, renderer, controls, canvas3d; 
+var container, scene, camera, renderer, controls, canvas3d;
 var movieGeometry;
 
 //GLOBAL VARS FOR CONTROL AND GUI
@@ -20,7 +20,7 @@ var sliders;
 var gui;
 var printed = 1;
 //Blending mode
-var mix ; 
+var mix ;
 //mouse position
 var mouseX = 0;
 var mouseY = 0;
@@ -138,7 +138,7 @@ theirVideoCanvasContext = theirVideoCanvas.getContext( '2d' );
 // (set up)
 init();
 
-// (draw)				
+// (draw)
 animate();
 
 function init()
@@ -216,6 +216,11 @@ container.addEventListener('click', hideInfo, false);
 document.querySelector('.closeBtn').addEventListener('click', hideInfo, false);
 title.addEventListener('click', showInfo, false);
 
+// bind keyEvents
+document.addEventListener("keydown", onKeyDown, false);
+document.addEventListener("keyup", onKeyUp, false);
+
+
 // LIGHT
 var ambient = new THREE.AmbientLight( 0x101030 );
 canvas3d.add( ambient );
@@ -226,14 +231,14 @@ canvas3d.add( directionalLight );
 
 // ADD FLOOR
 	var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
-	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
 	floorTexture.repeat.set( 10, 10 );
 	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
-	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	var floorGeometry = new THREE.PlaneBufferGeometry(1000, 1000, 10, 10);
 	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
 	floor.position.y = -50;
 	floor.rotation.x = Math.PI / 2;
-	floor.visible = false ; 
+	floor.visible = false ;
 	canvas3d.add(floor);
 
 // CREATE VIDEO 3D TEXTURE for me
@@ -250,68 +255,68 @@ theirVideoTexture.magFilter = THREE.LinearFilter;
 
 
 
-	
+
   //Test plane for partners video (right)
-  var partnerMaterial = new THREE.MeshBasicMaterial( { 
-  	map: theirVideoTexture, 
-  	overdraw: true, 
-  	side:THREE.DoubleSide, 
+  var partnerMaterial = new THREE.MeshBasicMaterial( {
+  	map: theirVideoTexture,
+  	overdraw: true,
+  	side:THREE.DoubleSide,
  	transparent: true,
-            
+
   } );
   	//var partnerTexture = new THREE.ImageUtils.loadTexture( 'images/test.jpg' );
     //var partnerTexture = new THREE.Texture( theirVideoTexture );
     mix = THREE.MultiplyBlending;
-    var bigPartnerMaterial = new THREE.MeshBasicMaterial( { 
-  	map: theirVideoTexture, 
-  	overdraw: true, 
-  	side:THREE.DoubleSide, 
+    var bigPartnerMaterial = new THREE.MeshBasicMaterial( {
+  	map: theirVideoTexture,
+  	overdraw: true,
+  	side:THREE.DoubleSide,
  	transparent: true,
  	blending: mix
-            
+
   } );
 
   // the geometry on which the movie will be displayed;
   //    movie image will be scaled to fit these dimensions.
-  var partnerGeometry = new THREE.PlaneGeometry( (theirVideoCanvas.width/7), (theirVideoCanvas.height/7), 1, 1 );
+  var partnerGeometry = new THREE.PlaneBufferGeometry( (theirVideoCanvas.width/7), (theirVideoCanvas.height/7), 1, 1 );
   var partnerScreen = new THREE.Mesh( partnerGeometry, partnerMaterial );
   partnerScreen.position.set(260,0,30);
 
   partnerScreen.rotation.y = Math.PI;
 
-  
+
   canvas3d.add(partnerScreen);
 
     //Test plane for my video (left)
   var myMaterial = new THREE.MeshBasicMaterial( { map: myVideoTexture, overdraw: true, side:THREE.DoubleSide } );
   // the geometry on which the movie will be displayed;
   //    movie image will be scaled to fit these dimensions.
-  myGeometry = new THREE.PlaneGeometry( (myVideoCanvas.width/7), (myVideoCanvas.height/7), 1, 1 );
+  myGeometry = new THREE.PlaneBufferGeometry( (myVideoCanvas.width/7), (myVideoCanvas.height/7), 1, 1 );
 
   var myScreen = new THREE.Mesh( myGeometry, myMaterial );
   myScreen.position.set((-260),0,30);
   myScreen.rotation.y = Math.PI;
-  
+
 
   canvas3d.add(myScreen);
 
-  	movieGeometry = new THREE.PlaneGeometry( 400, 300, 1, 1 );
+  	movieGeometry = new THREE.PlaneBufferGeometry( 400, 300, 1, 1 );
 	movieGeometry.dynamic = true;
 
 
 	var myBigScreen = new THREE.Mesh( movieGeometry, myMaterial );
 	myBigScreen.position.set(0,0,0);
 	myBigScreen.rotation.y = Math.PI;
-	//myBigScreen.dynamic = true;	
+	//myBigScreen.dynamic = true;
 	canvas3d.add(myBigScreen);
 
 
 	var partnerBigScreen = new THREE.Mesh( movieGeometry, bigPartnerMaterial );
 
 	partnerBigScreen.position.set(0,0,10);
-	partnerBigScreen.rotation.y = Math.PI;	
+	partnerBigScreen.rotation.y = Math.PI;
 	canvas3d.add(partnerBigScreen);
-	
+
 	camera.position.set(0,10,500);
 	camera.lookAt(partnerBigScreen.position);
 
@@ -320,9 +325,9 @@ theirVideoTexture.magFilter = THREE.LinearFilter;
 // GUI
 	sliders = new params();
 	gui = new dat.GUI();
-	
 
-	
+
+
 
 	//VIDEO CONTROLLER FOLDER
 	var f1 = gui.addFolder('Show/Hide Enviroment');
@@ -334,17 +339,17 @@ theirVideoTexture.magFilter = THREE.LinearFilter;
 	//SHOW OR HIDE FLOOR
 		var floorShow = f1.add(sliders, 'showFloor');
 		floorShow.onChange(function(value){
-		floor.visible = value;	
+		floor.visible = value;
 		});
 
-	//Video Rotate Z 
+	//Video Rotate Z
 	var zRotV1 = f1.add(sliders, 'rotateMyScreenZ',0,360).step(1);
 	zRotV1.onChange(function(value){
 	console.log(value);
 	value = map_range(value, 0, 360, 0, Math.PI*2);
 	myBigScreen.rotation.z = value;
 	myScreen.rotation.z = value;
-	});	
+	});
 
 	var yRotV1 = f1.add(sliders, 'rotateMyScreenY',0,360).step(1);
 	yRotV1.onChange(function(value){
@@ -370,7 +375,7 @@ theirVideoTexture.magFilter = THREE.LinearFilter;
 	partnerScreen.rotation.y = value;
 	});
 
-	
+
 
 
 	// var message = {
@@ -383,7 +388,7 @@ theirVideoTexture.magFilter = THREE.LinearFilter;
 	//socket
 	//socket.send (JSON.stringify(message));
 
-	
+
 	var f2 = gui.addFolder('Color Correction');
 
 	f2.add(sliders, 'contrast', 1, 5).name('Contrast').onChange(onParamsChange);
@@ -398,13 +403,13 @@ theirVideoTexture.magFilter = THREE.LinearFilter;
 
 
 var blend = f2.add( sliders, 'blendit', [ "Multiply", "Add", "Subtract" ] ).name('Blending Type').listen();
-	blend.onChange(function(value) {  
+	blend.onChange(function(value) {
 
 	console.log(value);
 
 
 
-	
+
 
 	if (value == "Multiply")
 		value = THREE.MultiplyBlending ;
@@ -412,8 +417,8 @@ var blend = f2.add( sliders, 'blendit', [ "Multiply", "Add", "Subtract" ] ).name
 		value = THREE.AdditiveBlending;
 	else if (value == "Subtract")
 		value = THREE.SubtractiveBlending ;
-	
-	mix = value; 
+
+	mix = value;
 
 	bigPartnerMaterial.blending = mix;
 
@@ -422,15 +427,15 @@ var blend = f2.add( sliders, 'blendit', [ "Multiply", "Add", "Subtract" ] ).name
 var f3 = gui.addFolder('Sound');
 var MyMute = f3.add(sliders, 'MyVidMute');
 		MyMute.onChange(function(value){
-		myVideo.muted = value;	
+		myVideo.muted = value;
 		});
 
 var TheirMute = f3.add(sliders, 'TheirVidMute');
 		TheirMute.onChange(function(value){
-		theirVideo.muted = value;	
+		theirVideo.muted = value;
 		});
 
-		
+
 
 
 }
@@ -442,32 +447,18 @@ function onMouseMove(event) {
 
 
 // ---------- ANIMATE -------------------
-function animate() 
+function animate()
 {
     requestAnimationFrame( animate );
 	render();
-	update();		
+	update();
 }
 
 
 
 // ---------- UPDATE-------------------
 function update()
-{		
-	if ( keyboard.pressed("p") ) // pause
-		myVideo.pause();	
-	//console.log('p');
-
-	if ( keyboard.pressed("r") ) // resume
-		myVideo.play();
-	//console.log('r');
-	if ( keyboard.pressed("s") ) // resume
-		myBigScreen.visible = true;
-	
-	if ( keyboard.pressed("s") ) // resume
-		myBigScreen.visible = false;
-
-	
+{
 	controls.update();
 
 
@@ -478,9 +469,9 @@ function update()
 
 // ---------- RENDER -------------------
 
-function render() 
-{	
-	// if ( myVideo.readyState === myVideo.HAVE_ENOUGH_DATA ) 
+function render()
+{
+	// if ( myVideo.readyState === myVideo.HAVE_ENOUGH_DATA )
 	// 	myVideoCanvasContext.drawImage(myVideo, myVideoXpos, myVideoYpos , myVideo.width, myVideo.height, 0, 0, myVideoCanvas.width, myVideoCanvas.height);
 	// //myVideoCanvasContext.drawImage(myVideo, 0,0, );
 
@@ -492,19 +483,19 @@ function render()
 	// }
 	// printed--;
 
-	if ( myVideoTexture ) 
+	if ( myVideoTexture )
 			myVideoTexture.needsUpdate = true;
 				//getZDepths();
 
 
- 
-// if ( theirVideo.readyState === theirVideo.HAVE_ENOUGH_DATA )
-// theirVideoCanvasContext.drawImage(theirVideo, theirVideoXpos, theirVideoYpos , theirVideoCanvas.width, theirVideoCanvas.height, 0, 0, theirVideo.width*theirVideoZoom, theirVideo.height*theirVideoZoom); 
 
-  if ( theirVideoTexture ) 
+// if ( theirVideo.readyState === theirVideo.HAVE_ENOUGH_DATA )
+// theirVideoCanvasContext.drawImage(theirVideo, theirVideoXpos, theirVideoYpos , theirVideoCanvas.width, theirVideoCanvas.height, 0, 0, theirVideo.width*theirVideoZoom, theirVideo.height*theirVideoZoom);
+
+  if ( theirVideoTexture )
       theirVideoTexture.needsUpdate = true;
 
-	
+
 
 	//canvas3d.rotation.x += (mouseX/2000) ;
 	//console.log ( "MOUSEx", mouseX);
@@ -574,7 +565,77 @@ function showInfo() {
 	title.style.display = 'none';
 }
 function onParamsChange() {
-	
+
 	container.style.webkitFilter = "invert(" + sliders.invert + ") contrast(" + sliders.contrast + ") saturate(" + sliders.saturation + ") brightness(" + sliders.brightness + ")";
 }
 
+
+function onKeyDown(event) {
+	console.log(event.keyCode);
+
+	if (event.keyCode == 80) {		// 'p'
+		myVideo.pause();
+	}
+
+	else if (event.keyCode == 83) {	// 's'
+		// save image
+
+		myVideoCanvasContext.drawImage(myVideo, 0, 0, myVideo.width, myVideo.height);
+
+		var dataURL = myVideoCanvas.toDataURL();
+		console.log(dataURL);
+		var a = document.getElementById('canvasImg');
+		a.href = dataURL;
+		a.download = "screenshot.jpg";
+	}
+
+
+	// if ( keyboard.pressed("p") ) // pause
+	//console.log('p');
+
+	// if ( keyboard.pressed("r") ) // resume
+		// myVideo.play();
+	// console.log('r');
+	// if ( keyboard.pressed("s") ) // resume
+		// myBigScreen.visible = true;
+
+	// if ( keyboard.pressed("s") ) // resume
+		// myBigScreen.visible = false;
+
+
+
+}
+
+function onKeyUp(event) {
+	console.log(event.keyCode);
+}
+
+function saveMyImage() {
+		myVideoCanvasContext.drawImage(myVideo, 0, 0, myVideo.width, myVideo.height);
+		var dataURL = myVideoCanvas.toDataURL();
+		console.log(dataURL);
+		var a = document.getElementById('saveMyA');
+		a.href = dataURL;
+		a.download = "myScreenshot.jpg";
+}
+
+function saveTheirImage() {
+		theirVideoCanvasContext.drawImage(theirVideo, 0, 0, theirVideo.width, theirVideo.height);
+		var dataURL = theirVideoCanvas.toDataURL();
+		console.log(dataURL);
+		var a = document.getElementById('saveTheirA');
+		a.href = dataURL;
+		a.download = "theirScreenshot.jpg";
+}
+
+function saveMixed() {
+		theirVideoCanvasContext.clearRect(0, 0, theirVideoCanvasContext.width, theirVideoCanvasContext.height);
+		theirVideoCanvasContext.globalCompositeOperation = "multiply";
+		theirVideoCanvasContext.drawImage(myVideo, 0, 0, myVideo.width, myVideo.height);
+		theirVideoCanvasContext.drawImage(theirVideo, 0, 0, theirVideo.width, theirVideo.height);
+		var dataURL = theirVideoCanvas.toDataURL();
+		console.log(dataURL);
+		var a = document.getElementById('saveMixA');
+		a.href = dataURL;
+		a.download = "mixScreenshot.jpg";
+}

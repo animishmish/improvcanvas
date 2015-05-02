@@ -5,7 +5,7 @@
 		<title> Improv Canvas </title>
 
 		<link rel="stylesheet" href="style.css">
-  	
+
 
 
 </head>
@@ -30,14 +30,14 @@
 
 <div id="info">
 			<span class="closeBtn"></span>
-   
+
 
       <!-- Get local audio/myVideo stream -->
-     
+
 
       <!-- Make calls to others -->
       <div id="step2">
-        <p id="enterid">Your id: <input type="text" name="peerid" id="peerid" value="Enter Name"> 
+        <p id="enterid">Your id: <input type="text" name="peerid" id="peerid" value="Enter Name">
           <button id="peeridset" value="set" onclick="setid();">Set</button></p>
         <p id="displayid"><span id="my-id"></span></p>
         <p>Share this id with others so they can call you.</p>
@@ -46,7 +46,10 @@
         <div class="pure-form">
           <input type="text" placeholder="Call user id..." id="callto-id">
           <a href="#" class="pure-button pure-button-success" id="make-call">Call</a>
+
         </div>
+
+
       </div>
 
       <!-- Call in progress -->
@@ -55,8 +58,13 @@
         <p><a href="#" class="pure-button pure-button-error" id="end-call">End call</a></p>
     </div>
 
+    <a id="saveMyA" onclick="saveMyImage();" href="#">Download My Image</a>
+    <a id="saveTheirA" onclick="saveTheirImage();" href="#">Download Their Image</a>
+    <a id="saveMixA" onclick="saveMixed();" href="#">Download Mix</a>
+
+
 </div>
-    	
+
 
 <!-- This is a hidden div incase you need it - the camera error message is inside -->
 
