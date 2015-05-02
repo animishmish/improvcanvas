@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+		<title> Improv Canvas </title>
+
+		<link rel="stylesheet" href="style.css">
+  	
+
+
+</head>
+<body>
+
+<!-- class points to css -->
+<div id="container" class="pure-g"> </div>
+<div id="title">Call<span class="callBtn"></span></div>
+
+<div id="prompt">
+ <div id="step1">
+        <p>Please click `allow` on the top of the screen so we can access your webcam and microphone for calls.</p>
+
+        <!-- Error Video stream -->
+        <div id="step1-error">
+          <p>Failed to access the webcam and microphone. Make sure to run this demo on an http server and click allow when asked for permission by the browser.</p>
+          <a href="#" class="pure-button pure-button-error" id="step1-retry">Try again</a>
+        </div>
+
+      </div>
+</div>
+
+<div id="info">
+			<span class="closeBtn"></span>
+   
+
+      <!-- Get local audio/myVideo stream -->
+     
+
+      <!-- Make calls to others -->
+      <div id="step2">
+        <p id="enterid">Your id: <input type="text" name="peerid" id="peerid" value="Enter Name"> 
+          <button id="peeridset" value="set" onclick="setid();">Set</button></p>
+        <p id="displayid"><span id="my-id"></span></p>
+        <p>Share this id with others so they can call you.</p>
+
+        <h3>Make a call</h3>
+        <div class="pure-form">
+          <input type="text" placeholder="Call user id..." id="callto-id">
+          <a href="#" class="pure-button pure-button-success" id="make-call">Call</a>
+        </div>
+      </div>
+
+      <!-- Call in progress -->
+      <div id="step3">
+        <p>Currently in call with <span id="their-id">...</span></p>
+        <p><a href="#" class="pure-button pure-button-error" id="end-call">End call</a></p>
+    </div>
+
+</div>
+    	
+
+<!-- This is a hidden div incase you need it - the camera error message is inside -->
+
+<div hidden>
+<!--Setting up my webcam myVideo steram and placing it on a canvas-->
+<video id="my-video" autoplay  ></video>
+<canvas id="myVideoCanvas" ></canvas>
+
+<!--Setting up partners webcam myVideo steram and placing it on a canvas-->
+<video id="their-video" autoplay  ></video>
+<canvas id="theirVideoCanvas" ></canvas>
+
+</div>
+
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  <!-- peer.js webrtc framework -->
+  		<script type="text/javascript" src="http://cdn.peerjs.com/0.3/peer.js"></script>
+
+  		<script type="text/javascript" src="js/statsHandler.js"></script>
+  <!-- the chat -->
+  		<script type="text/javascript" src="js/chat.js"></script>
+
+<script src="js/three.min.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/OrbitControls.js"></script>
+
+<script src="js/THREEx.KeyboardState.js"></script>
+<script src="js/THREEx.FullScreen.js"></script>
+<script src="js/THREEx.WindowResize.js"></script>
+
+<script src='js/DAT.GUI.min.js'></script>
+
+<!-- <script src='js/sockets.js'></script>
+ -->
+
+<script src='js/improvcanvas.js'></script>
+
+
+
+</body>
+</html>
+
+

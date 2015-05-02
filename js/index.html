@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<title>Three JS with Peer JS</title>
+
+	<link rel="stylesheet" href="style.css">
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  <!-- peer.js webrtc framework -->
+  <script type="text/javascript" src="http://cdn.peerjs.com/0.3/peer.js"></script>
+
+  <script type="text/javascript" src="js/statsHandler.js"></script>
+  <!-- the chat -->
+  <script type="text/javascript" src="js/chat.js"></script>
+
+	<!--meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<style>
+			body {
+				margin: 0px;
+				padding: 0px;
+				font-family: 'inconsolata';
+				font-size: 15px;
+				overflow: hidden;
+			}
+	</style-->
+</head>
+<body>
+
+<div id="container" class="pure-g">
+
+    <!-- Video area -->
+   
+
+    <!-- Steps -->
+    <div class="pure-u-1-3">
+      <h2>Test peerjs to threejs</h2>
+      <!-- Get local audio/myVideo stream -->
+      <div id="step1">
+        <p>Please click `allow` on the top of the screen so we can access your webcam and microphone for calls.</p>
+        <div id="step1-error">
+          <p>Failed to access the webcam and microphone. Make sure to run this demo on an http server and click allow when asked for permission by the browser.</p>
+          <a href="#" class="pure-button pure-button-error" id="step1-retry">Try again</a>
+        </div>
+      </div>
+
+      <!-- Make calls to others -->
+      <div id="step2">
+        <p>Your id: <span id="my-id">...</span></p>
+        <p>Share this id with others so they can call you.</p>
+
+
+        <h3>Make a call</h3>
+        <div class="pure-form">
+          <input type="text" placeholder="Call user id..." id="callto-id">
+          <a href="#" class="pure-button pure-button-success" id="make-call">Call</a>
+        </div>
+      </div>
+
+      <!-- Call in progress -->
+      <div id="step3">
+        <p>Currently in call with <span id="their-id">...</span></p>
+        <p><a href="#" class="pure-button pure-button-error" id="end-call">End call</a></p>
+      </div>
+
+     
+
+    </div>
+
+    </div>	
+
+<!-- This is a hidden div incase you need it - the camera error message is inside -->
+<div hidden>
+<p id="errorMessage"></p>
+<!--Setting up my webcam myVideo steram and placing it on a canvas-->
+<video id="my-video" autoplay  ></video>
+<canvas id="myVideoCanvas" ></canvas>
+
+<!--Setting up partners webcam myVideo steram and placing it on a canvas-->
+<video id="their-video" autoplay  ></video>
+<canvas id="theirVideoCanvas" ></canvas>
+
+</div>
+
+<center>
+
+
+</center>
+
+<!-- Code for PeerJS buttons -->
+
+
+<!-- Here you assign an id for the webcam and for the myVideo canvas, you -->
+
+
+
+<!-- Now we import all of the external scripts from the js folder: -->
+
+<!-- webcam.js handles all error messages for webcam stream, Alon wrapped it -->
+<!--script src="js/webcam.js"></script-->
+
+<script src="js/three.min.js"></script>
+		<script src="js/omggif.js"></script>
+
+<script src="js/Detector.js"></script>
+<script src="js/OrbitControls.js"></script>
+
+<script src="js/THREEx.KeyboardState.js"></script>
+<script src="js/THREEx.FullScreen.js"></script>
+<script src="js/THREEx.WindowResize.js"></script>
+
+<script src="js/MTLLoader.js"></script>
+<script src="js/OBJMTLLoader.js"></script>
+
+<script src='js/DAT.GUI.min.js'></script>
+
+<script src='js/sockets.js'></script>
+
+<!-- SHADER -->
+<script id="fragment_shh" type="x-shader/x-fragment">
+			#ifdef GL_ES
+			precision highp float;
+			#endif
+
+			uniform sampler2D tOne;
+			uniform sampler2D tSec;
+
+			varying vec2 vUv;
+			varying vec2 vUv2;
+			
+			void main(void)
+			{
+				vec3 c;
+				vec4 Ca = texture2D(tOne, vUv);
+				vec4 Cb = texture2D(tSec, vUv2);
+				c = Ca.rgb * Cb.rgb;
+			    gl_FragColor= vec4(c, 1.0);
+				
+			}
+			
+		</script>
+
+		<script id="vertex_shh" type="x-shader/x-vertex">
+		
+			varying vec2 vUv;
+			varying vec2 vUv2;
+
+			void main()
+			{
+				// console.log(position);
+				float aspect = 4.0 / 3.0;
+				float videoXoffset = 0.1;
+				vUv = uv;
+				vUv2 = vec2(vUv.x, vUv.y);
+				vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+				gl_Position = projectionMatrix * mvPosition;
+			}
+			
+		</script>
+
+
+
+
+<div id="ThreeJS" ></div>	 
+<script type="text/javascript"	>
+
+// global VIDEO variables for my video
+var myVideo, myVideoCanvas, myVideoCanvasContext,myVideoTexture;
+
+// global VIDEO variables for their video
+var theirVideo, theirVideoCanvas, theirVideoCanvasContext,theirVideoTexture;
+
+// GLOBAL THREE.JS VARIABLES
+var container, scene, camera, renderer, controls, alon;
+
+//GLOBAL VARS FOR CONTROL AND GUI
+var keyboard = new THREEx.KeyboardState();
+var gui;
+
+//-------------------------------
+
+//------- 3D MODEL CONTROL ----------
+
+var objName = 'obj/rosalie/121614.obj';
+var mtlName = 'obj/rosalie/121614.mtl';
+var modelTexture = 'textures/tex_0.png';
+
+var angle = 0;
+var modelScale = 1;
+//var speed = 0;
+
+
+
+//---- WEBCAM VIDEO STREAM -----
+
+//01.
+//My Webcam attributes and style
+myVideo = document.getElementById( 'my-video' );
+myVideo.width = 800;
+myVideo.height = 600;
+myVideo.muted = true;
+//myVideo.rotate(180);
+myVideo.style.visibility = "visible";
+
+//create variable to offset camera on myVideo texture
+var myVideoXpos = 0;
+var myVideoYpos = 0;
+var myVideoZoom = 1;
+var p_deg = 0;
+
+//------ VIDEO CANVAS --------------
+
+//myVideo assigned to a canvas
+myVideoCanvas = document.getElementById( 'myVideoCanvas' );
+
+//myVideo canvas variables
+myVideoCanvas.width = myVideo.width;
+myVideoCanvas.height = myVideo.height;
+// content of the myVideo canvas
+myVideoCanvasContext = myVideoCanvas.getContext( '2d' );
+
+
+//02.
+//Their Webcam attributes and style
+theirVideo = document.getElementById( 'their-video' );
+theirVideo.width = 800;
+theirVideo.height = 600;
+theirVideo.muted = true;
+theirVideo.style.visibility = "visible";
+
+//create variable to offset camera on myVideo texture
+var theirVideoXpos = 0;
+var theirVideoYpos = 0;
+var theirVideoZoom = 1;
+
+//------ VIDEO CANVAS --------------
+
+//theirVideo assigned to a canvas
+theirVideoCanvas = document.getElementById( 'theirVideoCanvas' );
+
+//theirVideo canvas variables
+theirVideoCanvas.width = theirVideo.width;
+theirVideoCanvas.height = theirVideo.height;
+// content of the myVideo canvas
+theirVideoCanvasContext = theirVideoCanvas.getContext( '2d' );
+
+
+
+//--------------------
+
+// (set up)
+init();
+
+// (draw)				
+animate();
+
+/// ----------FUNCTIONS-----------
+
+
+// -----------init----------------
+function init()
+{
+
+
+// SCENE
+scene = new THREE.Scene();
+
+// CAMERA
+var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+scene.add(camera);
+camera.position.set(0,150,400);
+camera.lookAt(scene.position);
+
+// RENDERER
+if ( Detector.webgl )
+renderer = new THREE.WebGLRenderer( {antialias:true} );
+else
+renderer = new THREE.CanvasRenderer();
+renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+container = document.getElementById( 'ThreeJS' );
+container.appendChild( renderer.domElement );
+
+// CONTROLS
+controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+// EVENTS
+THREEx.WindowResize(renderer, camera);
+THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+// LIGHT
+var ambient = new THREE.AmbientLight( 0x101030 );
+scene.add( ambient );
+
+var directionalLight = new THREE.DirectionalLight( 0xffeedd,1);
+directionalLight.position.set( 0, 0, 1 );
+scene.add( directionalLight );
+
+// ADD FLOOR
+	var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+	floorTexture.repeat.set( 10, 10 );
+	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -50;
+	floor.rotation.x = Math.PI / 2;
+	scene.add(floor);
+
+// CREATE VIDEO 3D TEXTURE for me
+myVideoTexture = new THREE.Texture( myVideoCanvas );
+myVideoTexture.minFilter = THREE.LinearFilter;
+myVideoTexture.magFilter = THREE.LinearFilter;
+
+// CREATE VIDEO 3D TEXTURE for partner
+theirVideoTexture = new THREE.Texture( theirVideoCanvas );
+theirVideoTexture.minFilter = THREE.LinearFilter;
+theirVideoTexture.magFilter = THREE.LinearFilter;
+
+///ADDING MULTI LAYER SHADER TEXTURE TO CALIBRATOR SCREEN
+	var vertShader = document.getElementById('vertex_shh').innerHTML;
+	var fragShader = document.getElementById('fragment_shh').innerHTML;
+
+	var attributes = {}; // custom attributes
+	
+	//var tex1 = myVideoTexture;
+	//var tex2 = THREE.ImageUtils.loadTexture("textures/Alon_head_tex_0.png", {}, function() { renderer.render(scene, camera);});
+
+	var uniforms = {    // custom uniforms (your textures)
+	
+	tOne: { type: "t", value: theirVideoTexture  },
+	tSec: { type: "t", value: myVideoTexture }
+	
+	};
+
+	var material_shh = new THREE.ShaderMaterial({
+
+  	uniforms: uniforms,
+  	attributes: attributes,
+  	vertexShader: vertShader,
+  	fragmentShader: fragShader
+
+	});
+
+//-------------------------------	
+
+
+// ADD VIDEO CALLIBRATION SCREEN (center)
+var movieMaterial = new THREE.MeshBasicMaterial( { map: myVideoTexture, overdraw: true, side:THREE.DoubleSide } );
+	// the geometry on which the movie will be displayed;
+	// 		movie image will be scaled to fit these dimensions.
+	var movieGeometry = new THREE.PlaneGeometry( 300, 400, 1, 1 );
+	var movieScreen = new THREE.Mesh( movieGeometry, material_shh );
+	movieScreen.position.set(0,0,0);
+	
+	scene.add(movieScreen);
+
+
+  //Test plane for partners video (right)
+  var partnerMaterial = new THREE.MeshBasicMaterial( { map: theirVideoTexture, overdraw: true, side:THREE.DoubleSide } );
+  // the geometry on which the movie will be displayed;
+  //    movie image will be scaled to fit these dimensions.
+  var partnerGeometry = new THREE.PlaneGeometry( (theirVideoCanvas.width/20), (theirVideoCanvas.height/20), 1, 1 );
+  var partnerScreen = new THREE.Mesh( partnerGeometry, partnerMaterial );
+  partnerScreen.position.set(130,-30,30);
+  
+  scene.add(partnerScreen);
+
+    //Test plane for my video (left)
+  var myMaterial = new THREE.MeshBasicMaterial( { map: myVideoTexture, overdraw: true, side:THREE.DoubleSide } );
+  // the geometry on which the movie will be displayed;
+  //    movie image will be scaled to fit these dimensions.
+  var myGeometry = new THREE.PlaneGeometry( (myVideoCanvas.width/20), (myVideoCanvas.height/20), 1, 1 );
+  var myScreen = new THREE.Mesh( myGeometry, myMaterial );
+  myScreen.position.set((-130),-30,30);
+  
+  scene.add(myScreen);
+	
+	camera.position.set(0,10,300);
+	camera.lookAt(movieScreen.position);
+
+// ?
+
+	var onProgress = function ( xhr ) {
+		if ( xhr.lengthComputable ) {
+			var percentComplete = xhr.loaded / xhr.total * 100;
+			console.log( Math.round(percentComplete, 2) + '% downloaded' );
+		}
+	};
+
+	var onError = function ( xhr ) {
+	};
+
+
+// ADD 3D OBJ MODEL
+
+				var loader = new THREE.OBJMTLLoader();
+				loader.load( objName, mtlName, function ( object ) {
+
+
+					alon = object;
+					
+					for (var  i in alon.children) {
+						alon.children[i].material.map = myVideoTexture;
+						alon.children[i].material.needsUpdate = true;
+					}			
+					// offset Y position of 3D model
+					object.position.y = 0;
+
+					//object scale
+
+					//reset rotation to world
+
+					object.rotateOnAxis(new THREE.Vector3(1,0,0), 0);
+					object.rotateOnAxis(new THREE.Vector3(0,1,0), 0);
+					object.rotateOnAxis(new THREE.Vector3(0,0,1), 0);
+					scene.add( object );
+
+
+//var serverAddress = 'ws://128.122.6.170:8080'; // this is the itpSandbox IP (check your preferences)
+	var serverAddress = 'ws://localhost:8080';
+	var socket = new WebSocket (serverAddress) ;
+
+	console.log('attempting connection to '+serverAddress);
+
+	socket.onopen = function(){
+	console.log('opened!');
+
+	};
+
+	socket.onmessage = function(message){
+		var data = JSON.parse(message.data);
+		console.log(data.type); // look at the type to see where it should go
+		console.log(data.value); // and send this number there to update the GUI slider
+
+		if(data.type==='scaleVideo') {
+			myVideoZoom = data.value;
+		}
+
+		else if (data.type==='rotateScreenZ') {
+			movieScreen.rotation.z = data.value;
+		};
+	};
+
+	socket.onclose = function(){
+	console.log('closed!');
+
+	};
+
+
+//------ADD GUI-------
+//ADD GUI
+var sliders = new function() {
+			this.rotationAngle = 0;
+            this.rotationSpeed = 0;
+            this.resetRotation = false
+
+            this.showVideo = true;
+            this.showFloor = true;
+            this.shiftVideoX = 0;
+            this.shiftVideoY = 0;
+            this.scaleVideo = 1;
+            this.rotateScreenZ = 270;
+
+            this.Model = 'Alon';
+            this.yPosModel = -28;
+            this.xPosModel = 0;
+            this.zPosModel = 0;
+         
+            this.xRotModel = 0;
+			this.yRotModel = 0;
+            this.zRotModel = 0;
+            
+            this.scaleModel = 1;
+
+
+        }
+	
+	gui = new dat.GUI();
+
+	
+
+//Model Rotation sliders
+	var f1 = gui.addFolder('Speed controllers');
+
+     /*   var angleY = f1.add(sliders, 'rotationAngle',0,0.1);
+angleY.onChange(function(value){
+object.rotateOnAxis(new THREE.Vector3(0,1,0), value);
+}); */
+     	var speed = f1.add(sliders, 'rotationSpeed',0,0.05);
+     	speed.onChange(function(value){
+		angle = value;
+		});
+
+      //  f1.add(sliders, 'resetRotation');
+
+//Video sliders
+
+//VIDEO CONTROLLER FOLDER
+	var f2 = gui.addFolder('Show/Hide Enviroment');
+	//SHOW OR HIDE VIDEO SCREEN
+	var videoShow = f2.add(sliders, 'showVideo');
+	videoShow.onChange(function(value){
+	movieScreen.visible = value;
+	});
+//SHOW OR HIDE FLOOR
+		var floorShow = f2.add(sliders, 'showFloor');
+		floorShow.onChange(function(value){
+		floor.visible = value;	
+		});
+
+//Video Rotate Z 
+var zRotV = f2.add(sliders, 'rotateScreenZ',0,360).step(1);
+zRotV.onChange(function(value){
+	console.log(value);
+	value = map_range(value, 0, 360, 0, Math.PI*2);
+	movieScreen.rotation.z = value;
+
+	var message = {
+		'type' : 'rotateScreenZ',
+		'value' : value
+	};
+
+	// message.type == 'scaleVideo'
+
+	//socket
+	socket.send (JSON.stringify(message));
+
+});		
+
+//SHIFT VIDEO TEXTURE X POSITION
+var xPosV = f2.add(sliders, 'shiftVideoX',0,200).step(1);
+xPosV.onChange(function(value){
+	console.log(value);
+	myVideoXpos = value;
+});	
+
+//SHIFT VIDEO TEXTURE X POSITION
+var yPosV = f2.add(sliders, 'shiftVideoY',0,200).step(1);
+yPosV.onChange(function(value){
+	console.log(value);
+	myVideoYpos = value;
+});	
+
+//ZOOM VIDEO TEXTURE
+var zoomV = f2.add(sliders, 'scaleVideo',1,3).step(0.01);
+zoomV.onChange(function(value){
+	console.log(value);
+
+	var message = {
+		'type' : 'scaleVideo',
+		'value' : value
+	};
+
+	// message.type == 'scaleVideo'
+
+	//socket
+	socket.send (JSON.stringify(message));
+	myVideoZoom = value;
+});	
+
+
+// MODEL CONTROLERS
+var f3 = gui.addFolder('Model controllers');
+
+
+//Model Offset X Position
+var xPosM = f3.add(sliders, 'xPosModel',-50,50).step(1);
+xPosM.onChange(function(value){
+	console.log(value);
+object.position.x = value;
+});
+
+//Model Offset Y Position
+var yPosM = f3.add(sliders, 'yPosModel',-50,50).step(1);
+yPosM.onChange(function(value){
+	console.log(value);
+object.position.y = value;
+});
+
+
+//Model Offset z Position
+var zPosM = f3.add(sliders, 'zPosModel',0,100).step(1);
+zPosM.onChange(function(value){
+	console.log(value);
+object.position.z = value;
+});
+
+//----------------------------
+
+//Model Rotate X 
+var xRotM = f3.add(sliders, 'xRotModel',0,360).step(1);
+xRotM.onChange(function(value){
+	console.log(value);
+	value = map_range(value, 0, 360, 0, Math.PI*2);
+	object.rotation.x = value;
+// object.rotateOnAxis(new THREE.Vector3(1,0,0), value);
+
+});
+
+//Model Rotate Y 
+var yRotM = f3.add(sliders, 'yRotModel',0,360).step(1);
+yRotM.onChange(function(value){
+	console.log(value);
+	value = map_range(value, 0, 360, 0, Math.PI*2);
+	object.rotation.y = value;
+});
+
+
+//Model Rotate Z 
+var zRotM = f3.add(sliders, 'zRotModel',0,360).step(1);
+zRotM.onChange(function(value){
+	console.log(value);
+	value = map_range(value, 0, 360, 0, Math.PI*2);
+	object.rotation.z = value;
+});
+
+//--------------------
+
+//Model Scale
+var scaleM = f3.add(sliders, 'scaleModel',0,50).step(1);
+scaleM.onChange(function(value){
+	console.log(value);
+object.scale.set(value,value,value);
+value;
+});					
+
+				}, onProgress, onError );
+
+
+}
+
+// ---------- ANIMATE -------------------
+function animate() 
+{
+    requestAnimationFrame( animate );
+	render();
+	update();		
+}
+
+// ---------- UPDATE-------------------
+function update()
+{		
+	if ( keyboard.pressed("p") ) // pause
+		myVideo.pause();	
+	//console.log('p');
+
+	if ( keyboard.pressed("r") ) // resume
+		myVideo.play();
+	//console.log('r');
+	if ( keyboard.pressed("s") ) // resume
+		movieScreen.visible = true;
+	
+	if ( keyboard.pressed("s") ) // resume
+		movieScreen.visible = false;
+
+	
+	controls.update();
+
+// Iterate over all controllers
+  for (var i in gui.__controllers) {
+    gui.__controllers[i].updateDisplay();
+  }
+	//THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+
+
+}
+
+// ---------- RENDER -------------------
+
+function render() 
+{	
+	if ( myVideo.readyState === myVideo.HAVE_ENOUGH_DATA ) 
+		myVideoCanvasContext.drawImage(myVideo, myVideoXpos, myVideoYpos , myVideoCanvas.width, myVideoCanvas.height, 0, 0, myVideo.width*myVideoZoom, myVideo.height*myVideoZoom);
+
+	if ( myVideoTexture ) 
+			myVideoTexture.needsUpdate = true;
+
+ 
+if ( theirVideo.readyState === theirVideo.HAVE_ENOUGH_DATA )
+theirVideoCanvasContext.drawImage(theirVideo, theirVideoXpos, theirVideoYpos , theirVideoCanvas.width, theirVideoCanvas.height, 0, 0, theirVideo.width*theirVideoZoom, theirVideo.height*theirVideoZoom); 
+
+  if ( theirVideoTexture ) 
+      theirVideoTexture.needsUpdate = true;
+	
+	if (alon != undefined) {
+					alon.rotateOnAxis(new THREE.Vector3(0,1,0), angle);
+				}	
+
+	renderer.render( scene, camera );
+}
+
+// ----------	RADIAN TO DEGREES FUNCTION -------------
+function map_range(value, low1, high1, low2, high2){
+	return low2+(high2-low2)*(value-low1)/(high1-low1);
+}
+
+
+
+
+
+</script>
+
+</body>
+</html>
