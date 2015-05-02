@@ -611,6 +611,9 @@ function onKeyUp(event) {
 }
 
 function saveMyImage() {
+		myVideoCanvasContext.clearRect(0, 0, theirVideoCanvasContext.width, theirVideoCanvasContext.height);
+		myVideoCanvasContext.translate(myVideo.width, 0);
+		myVideoCanvasContext.scale(-1, 1);
 		myVideoCanvasContext.drawImage(myVideo, 0, 0, myVideo.width, myVideo.height);
 		var dataURL = myVideoCanvas.toDataURL();
 		console.log(dataURL);
@@ -620,7 +623,11 @@ function saveMyImage() {
 }
 
 function saveTheirImage() {
+		theirVideoCanvasContext.clearRect(0, 0, theirVideoCanvasContext.width, theirVideoCanvasContext.height);
+		theirVideoCanvasContext.translate(myVideo.width, 0);
+		theirVideoCanvasContext.scale(-1, 1);
 		theirVideoCanvasContext.drawImage(theirVideo, 0, 0, theirVideo.width, theirVideo.height);
+
 		var dataURL = theirVideoCanvas.toDataURL();
 		console.log(dataURL);
 		var a = document.getElementById('saveTheirA');
@@ -630,6 +637,8 @@ function saveTheirImage() {
 
 function saveMixed() {
 		theirVideoCanvasContext.clearRect(0, 0, theirVideoCanvasContext.width, theirVideoCanvasContext.height);
+		theirVideoCanvasContext.translate(myVideo.width, 0);
+		theirVideoCanvasContext.scale(-1, 1);
 		theirVideoCanvasContext.globalCompositeOperation = "multiply";
 		theirVideoCanvasContext.drawImage(myVideo, 0, 0, myVideo.width, myVideo.height);
 		theirVideoCanvasContext.drawImage(theirVideo, 0, 0, theirVideo.width, theirVideo.height);
